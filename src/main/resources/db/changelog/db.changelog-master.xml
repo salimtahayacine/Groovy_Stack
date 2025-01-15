@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.25.xsd">
+
+    <!-- Include all changelog files -->
+<!--    <includeAll path="db/changelog/changes/" relativeToChangelogFile="false"/>-->
+<!--    <includeAll path="classpath:/db/changelog/change/" />-->
+<!--    <includeAll path="/db/changelog/change/"><includeAll/>-->
+    <includeAll path="/db/changelog/change/"></includeAll>
+<!--    <include file="db/changelog/change/changelog-1.xml"/>-->
+<!--    <include file="db/changelog/change/changelog-1.mssql.sql"/>-->
+
+</databaseChangeLog>

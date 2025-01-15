@@ -2,10 +2,12 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.3.7'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.liquibase.gradle' version '2.0.4' // Add the Liquibase plugin
 }
 
 group = 'com.stronglover'
 version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
 
 java {
 	toolchain {
@@ -18,6 +20,10 @@ configurations {
 		extendsFrom annotationProcessor
 	}
 }
+// Exclude slf4j-simple if it's being pulled in as a transitive dependency
+configurations.all {
+	exclude group: 'org.slf4j', module: 'slf4j-simple'
+}
 
 repositories {
 	mavenCentral()
@@ -28,13 +34,88 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc'
-	annotationProcessor 'org.projectlombok:lombok'
+	// Add Logback for logging
+	implementation 'org.springframework.boot:spring-boot-starter-logging'
+
+	implementation 'org.liquibase:liquibase-core:4.30.0'
+	implementation 'org.liquibase.ext:liquibase-hibernate6:4.25.1'
+	implementation 'com.microsoft.sqlserver:mssql-jdbc:12.6.4.jre11' // runtime scope is default in Gradle
+	annotationProcessor 'org.projectlombok:lombok' // Use annotationProcessor instead of compileOnly
+	//runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
+//tasks.withType(JavaCompile) {
+//	options.annotationProcessorPath = configurations.compileOnly
+//}
+tasks.withType(JavaCompile) {
+	options.annotationProcessorPath = configurations.annotationProcessor
+}
+bootJar {
+	exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+}
+
+//liquibase {
+//	activities {
+//		main {
+//			url 'jdbc:sqlserver://localhost:57134;databaseName=liquibase_test;encrypt=true;trustServerCertificate=true'
+//			username 'admin'
+//			password 'admin'
+//			driver 'com.microsoft.sqlserver.jdbc.SQLServerDriver'
+//			changeLogFile 'src/main/resources/db/changelog/db.changelog-master.xml'
+//			propertyFile 'src/main/resources/liquibase.properties'
+//			diffChangeLogFile "src/main/resources/db/changelog/change/changelog-${System.currentTimeMillis()}.mssql.sql"
+//			outputChangeLogFile 'src/main/resources/db/changelog/change/changelog-diff.xml'
+//		}
+//	}
+//	runList = 'main'
+//}
+
+liquibase {
+	activities {
+		main {
+			changeLogFile 'src/main/resources/db/changelog/db.changelog-master.xml'
+			url 'jdbc:sqlserver://localhost:57134;databaseName=liquibase_test;encrypt=true;trustServerCertificate=true'
+			username 'admin'
+			password 'admin'
+			driver 'com.microsoft.sqlserver.jdbc.SQLServerDriver'
+		}
+		diff {
+			changeLogFile 'src/main/resources/db/changelog/db.changelog-diff.xml'
+			referenceUrl 'hibernate:spring:com.example.demo.entity?dialect=org.hibernate.dialect.SQLServerDialect'
+			referenceUsername 'admin'
+			referencePassword 'admin'
+			referenceDriver 'liquibase.ext.hibernate.database.connection.HibernateDriver'
+		}
+	}
+	runList = 'main'
+}
+//task liquibaseDiff(type: org.liquibase.gradle.LiquibaseTask) {
+//	group = 'liquibase'
+//	description = 'Generates a diff changelog between the current and reference database.'
+//	dependsOn 'liquibaseDiff'
+//}
+//task liquibaseDiff(type: org.liquibase.gradle.LiquibaseTask) {
+//	changeLogFile 'src/main/resources/db/changelog/db.changelog-diff.xml'
+//	url 'jdbc:sqlserver://localhost:57134;databaseName=liquibase_test;encrypt=true;trustServerCertificate=true'
+//	username 'admin'
+//	password 'admin'
+//	driver 'com.microsoft.sqlserver.jdbc.SQLServerDriver'
+//	// Specify the reference database
+//	referenceUrl 'hibernate:spring:com.example.demo.entity?dialect=org.hibernate.dialect.SQLServerDialect'
+//	//referenceUsername 'your_reference_username'
+//	//referencePassword 'your_reference_password'
+//	referenceDriver 'liquibase.ext.hibernate.database.connection.HibernateDriver'
+//	changeLogFile 'src/main/resources/db/changelog/db.changelog-master.xml'
+//	propertyFile 'src/main/resources/liquibase.properties'
+//	// Set the output format
+//	outputFile 'src/main/resources/db/changelog/db.changelog-diff.xml'
+//	diffChangeLogFile "src/main/resources/db/changelog/change/changelog-${System.currentTimeMillis()}.mssql.sql"
+//	outputChangeLogFile 'src/main/resources/db/changelog/change/changelog-diff.xml'
+//}
+
 
 tasks.named('test') {
 	useJUnitPlatform()

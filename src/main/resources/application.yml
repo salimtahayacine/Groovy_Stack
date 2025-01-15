@@ -1,4 +1,21 @@
 spring:
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  application:
+    name: sample-liquibase-app
+  datasource:
+    url: jdbc:sqlserver://localhost:57134;encrypt=true;trustServerCertificate=true;databaseName=liquibase_test
+    username: admin
+    password: admin
+    driverClassName: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLServerDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: false
   security:
     oauth2:
       resourceserver:
