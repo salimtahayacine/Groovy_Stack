@@ -2,7 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.3.7'
 	id 'io.spring.dependency-management' version '1.1.7'
-	id 'org.liquibase.gradle' version '2.0.4' // Add the Liquibase plugin
+	id 'org.liquibase.gradle' version '2.2.0' // Add the Liquibase plugin
 }
 
 group = 'com.stronglover'
@@ -37,14 +37,17 @@ dependencies {
 	// Add Logback for logging
 	implementation 'org.springframework.boot:spring-boot-starter-logging'
 
-	implementation 'org.liquibase:liquibase-core:4.30.0'
+	//implementation 'org.liquibase:liquibase-core:4.30.0'
 	implementation 'org.liquibase.ext:liquibase-hibernate6:4.25.1'
 	implementation 'com.microsoft.sqlserver:mssql-jdbc:12.6.4.jre11' // runtime scope is default in Gradle
+	// Add picocli dependency
+	implementation 'info.picocli:picocli:4.6.3' // Ensure picocli is included
 	annotationProcessor 'org.projectlombok:lombok' // Use annotationProcessor instead of compileOnly
 	//runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	liquibaseRuntime 'org.liquibase:liquibase-core:4.30.0' // Use the latest stable version
 }
 
 //tasks.withType(JavaCompile) {
@@ -76,27 +79,51 @@ bootJar {
 liquibase {
 	activities {
 		main {
-			changeLogFile 'src/main/resources/db/changelog/db.changelog-master.xml'
-			url 'jdbc:sqlserver://localhost:57134;databaseName=liquibase_test;encrypt=true;trustServerCertificate=true'
-			username 'admin'
-			password 'admin'
-			driver 'com.microsoft.sqlserver.jdbc.SQLServerDriver'
-		}
-		diff {
-			changeLogFile 'src/main/resources/db/changelog/db.changelog-diff.xml'
-			referenceUrl 'hibernate:spring:com.example.demo.entity?dialect=org.hibernate.dialect.SQLServerDialect'
-			referenceUsername 'admin'
-			referencePassword 'admin'
-			referenceDriver 'liquibase.ext.hibernate.database.connection.HibernateDriver'
+			propertyFile 'src/main/resources/liquibase.properties'
+			changelogFile 'src/main/resources/db/changelog/db.changelog-master.xml'
+			diffChangeLogFile 'src/main/resources/db/changelog/change/changelog-${maven.build.timestamp}.mssql.sql'
+			outputChangeLogFile 'src/main/resources/db/changelog/change/changelog-diff.xml'
 		}
 	}
 	runList = 'main'
 }
+
+//liquibase {
+//	activities {
+//		main {
+//			// Specify the changelog file
+//			changelogFile 'src/main/resources/db/changelog/db.changelog-master.xml'
+//			// Specify the properties file
+//			propertyFile 'src/main/resources/liquibase.properties'
+//			// Specify the diff changelog file
+//			diffChangeLogFile 'src/main/resources/db/changelog/change/changelog-${maven.build.timestamp}.mssql.sql'
+//			// Specify the output changelog file
+//			outputChangeLogFile 'src/main/resources/db/changelog/change/changelog-diff.xml'
+//			// Database connection details (if needed)
+//			url 'jdbc:sqlserver://localhost:57134;databaseName=your_database;encrypt=true;trustServerCertificate=true'
+//			username 'admin'
+//			password 'admin'
+//			driver 'com.microsoft.sqlserver.jdbc.SQLServerDriver'
+//		}
+////		diff {
+////			changeLogFile 'src/main/resources/db/changelog/db.changelog-diff.xml'
+////			referenceUrl 'hibernate:spring:com.example.demo.entity?dialect=org.hibernate.dialect.SQLServerDialect'
+////			referenceUsername 'admin'
+////			referencePassword 'admin'
+////			referenceDriver 'liquibase.ext.hibernate.database.connection.HibernateDriver'
+////			diffChangeLogFile "src/main/resources/db/changelog/change/changelog-${System.currentTimeMillis()}.mssql.sql"
+////
+////		}
+//	}
+//	runList = 'main'
+//}
+
 //task liquibaseDiff(type: org.liquibase.gradle.LiquibaseTask) {
 //	group = 'liquibase'
 //	description = 'Generates a diff changelog between the current and reference database.'
 //	dependsOn 'liquibaseDiff'
 //}
+
 //task liquibaseDiff(type: org.liquibase.gradle.LiquibaseTask) {
 //	changeLogFile 'src/main/resources/db/changelog/db.changelog-diff.xml'
 //	url 'jdbc:sqlserver://localhost:57134;databaseName=liquibase_test;encrypt=true;trustServerCertificate=true'
@@ -115,6 +142,28 @@ liquibase {
 //	diffChangeLogFile "src/main/resources/db/changelog/change/changelog-${System.currentTimeMillis()}.mssql.sql"
 //	outputChangeLogFile 'src/main/resources/db/changelog/change/changelog-diff.xml'
 //}
+
+// Define the diff task
+task liq_diff(type: org.liquibase.gradle.LiquibaseTask) {
+	group = 'Liquibase'
+	description = 'Generate a changelog based on the differences between two databases.'
+
+	// Set the command to 'diffChangeLog'
+//	command = 'diffChangeLog'
+
+	// Specify the diffChangeLogFile
+	liquibase {
+		activities {
+			diff {
+				changelogFile 'src/main/resources/db/changelog/change/changelog-${System.currentTimeMillis()}.mssql.sql' // Use changelogFile
+				referenceUrl 'jdbc:sqlserver://localhost:57134;databaseName=your_reference_database;encrypt=true;trustServerCertificate=true'
+				referenceUsername 'admin'
+				referencePassword 'admin'
+				diffChangeLogFile "src/main/resources/db/changelog/change/changelog-${System.currentTimeMillis()}.mssql.sql"
+			}
+		}
+	}
+}
 
 
 tasks.named('test') {
